@@ -2,7 +2,7 @@
  * API Client with automatic 401 Unauthorized interceptor and cookie support.
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Helper to get stored auth token if cookies aren't set
 const getStoredToken = () => {
