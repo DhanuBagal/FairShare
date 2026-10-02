@@ -42,22 +42,26 @@ export const fetchAPI = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, config);
 
-    // Prompt 4 Requirement: Catch 401 Unauthorized errors
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      // Ignore JSON parse errors for non-JSON responses (e.g., HTML 500 error pages)
+    }
+
+    // Handle 401 Unauthorized errors
     if (response.status === 401) {
       setStoredToken(null);
-      // Dispatch global event so AuthContext can handle redirect seamlessly
       window.dispatchEvent(new CustomEvent('unauthorized'));
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Unauthorized access. Please log in again.');
+      throw new Error(data?.error || 'Unauthorized access. Please log in again.');
     }
-
-    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'An error occurred while communicating with the server');
+      const errorMsg = data?.error || data?.message || `Server error (${response.status}). Please check database connection.`;
+      throw new Error(errorMsg);
     }
 
-    return data;
+    return data || {};
   } catch (error) {
     throw error;
   }
