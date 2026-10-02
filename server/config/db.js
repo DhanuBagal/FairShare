@@ -4,8 +4,11 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 let mongoMemoryServer = null;
 
 export const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
   try {
-    let uri = process.env.MONGO_URI;
+    let uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
     if (!uri) {
       console.log('⚡ MONGO_URI not defined. Spinning up high-performance in-memory MongoDB server...');

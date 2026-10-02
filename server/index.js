@@ -38,6 +38,16 @@ app.use(mongoSanitize({
   replaceWith: '_'
 }));
 
+// Ensure DB Connection Middleware
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', personalExpenseRoutes);
@@ -84,15 +94,18 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-connectDB().then(async () => {
-  // Auto seed demo data if database is empty
-  try {
-    await seedData();
-  } catch (err) {
-    console.log('Seed note:', err.message);
-  }
+if (!process.env.VERCEL) {
+  connectDB().then(async () => {
+    try {
+      await seedData();
+    } catch (err) {
+      console.log('Seed note:', err.message);
+    }
 
-  app.listen(PORT, () => {
-    console.log(`🚀 FairShare Backend Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    app.listen(PORT, () => {
+      console.log(`🚀 FairShare Backend Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
   });
-});
+}
+
+export default app;
