@@ -1,3 +1,4 @@
-import app from '../server/index.js';
-
-export default app;
+export default async function handler(req, res) {
+  const { default: app } = await import('../server/index.js');
+  return app(req, res);
+}
