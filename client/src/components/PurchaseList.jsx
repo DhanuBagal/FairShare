@@ -187,125 +187,166 @@ const PurchaseList = ({ groups = [], onConvertListToExpense }) => {
             {safeLists.map(list => {
               const completedCount = (list.items || []).filter(i => i.completed).length;
               const groupName = list.groupId ? list.groupId.name : 'Personal';
+              const isLocked = !!list.expenseId;
 
-            return (
-              <div key={list._id} className="glass-card" style={{ padding: '16px' }}>
-                {/* List Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: list.groupId ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
-                      🏷️ {groupName}
-                    </span>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginTop: '2px' }}>
-                      {list.name}
-                    </h3>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--accent-emerald)', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px' }}>
-                      {completedCount}/{list.items.length} Checked
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteList(list._id)}
-                      style={{ background: 'none', color: 'var(--text-dim)', padding: '2px' }}
-                      title="Delete list"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Checklist Items */}
-                {list.items.length === 0 ? (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px' }}>
-                    No items in this list yet. Add items below!
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                    {list.items.map(item => (
-                      <div
-                        key={item._id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'space-between',
-                          padding: '8px 10px',
-                          background: item.completed ? '#F8FAFC' : '#F1F5F9',
-                          borderRadius: '8px',
-                          opacity: item.completed ? 0.7 : 1
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleItem(list._id, item._id)}
-                            style={{ background: 'none', padding: 0, display: 'flex', alignItems: 'center', color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
-                          >
-                            {item.completed ? <CheckSquare size={18} /> : <Square size={18} />}
-                          </button>
-
-                          <span style={{
-                            fontSize: '0.85rem',
-                            fontWeight: '500',
-                            textDecoration: item.completed ? 'line-through' : 'none',
-                            color: item.completed ? 'var(--text-muted)' : 'var(--text-main)',
-                            whiteSpace: 'nowrap',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden'
-                          }}>
-                            {item.title}
+              return (
+                <div key={list._id} className="glass-card" style={{ padding: '16px', opacity: isLocked ? 0.9 : 1 }}>
+                  {/* List Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', fontWeight: '700', color: list.groupId ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+                        🏷️ {groupName}
+                      </span>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {list.name}
+                        {isLocked && (
+                          <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#475569', background: '#E2E8F0', padding: '2px 8px', borderRadius: '6px' }}>
+                            🔒 Logged as Expense
                           </span>
-                        </div>
+                        )}
+                      </h3>
+                    </div>
 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--accent-emerald)', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px' }}>
+                        {completedCount}/{list.items.length} Checked
+                      </span>
+                      {!isLocked && (
                         <button
                           type="button"
-                          onClick={() => handleDeleteItem(list._id, item._id)}
+                          onClick={() => handleDeleteList(list._id)}
                           style={{ background: 'none', color: 'var(--text-dim)', padding: '2px' }}
+                          title="Delete list"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={15} />
                         </button>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* Add Item Input (Title Only - No Price as requested!) */}
-                <form onSubmit={(e) => handleAddItem(list._id, e)} style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    style={{ flex: 1, minHeight: '34px', padding: '4px 10px', fontSize: '0.82rem' }}
-                    placeholder="Add item (e.g. Milk, Water bottles)..."
-                    value={itemInputs[list._id] || ''}
-                    onChange={(e) => setItemInputs({ ...itemInputs, [list._id]: e.target.value })}
-                  />
-                  <button type="submit" className="btn-secondary" style={{ minHeight: '34px', padding: '4px 10px', fontSize: '0.78rem' }}>
-                    <Plus size={13} /> Add
-                  </button>
-                </form>
+                  {/* Checklist Items */}
+                  {list.items.length === 0 ? (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px' }}>
+                      No items in this list yet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                      {list.items.map(item => (
+                        <div
+                          key={item._id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            background: item.completed ? '#F8FAFC' : '#F1F5F9',
+                            borderRadius: '8px',
+                            opacity: item.completed ? 0.7 : 1
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isLocked) {
+                                  alert('This list has been converted to an expense and is locked.');
+                                  return;
+                                }
+                                handleToggleItem(list._id, item._id);
+                              }}
+                              disabled={isLocked}
+                              style={{
+                                background: 'none',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                                cursor: isLocked ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              {item.completed ? <CheckSquare size={18} /> : <Square size={18} />}
+                            </button>
 
-                {/* Action: Convert Entire List to Group/Personal Expense */}
-                <button
-                  type="button"
-                  className="btn-primary"
-                  style={{ width: '100%', minHeight: '36px', padding: '6px', fontSize: '0.8rem', gap: '6px' }}
-                  onClick={() => {
-                    if (onConvertListToExpense) {
-                      onConvertListToExpense(
-                        list.groupId ? 'group' : 'personal',
-                        list.groupId?._id || list.groupId || null,
-                        list.name,
-                        list._id
-                      );
-                    }
-                  }}
-                >
-                  <Plus size={14} /> Add List as Expense (Pre-fills "{list.name}") <ArrowRight size={14} />
-                </button>
-              </div>
-            );
-          })}
+                            <span style={{
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              textDecoration: item.completed ? 'line-through' : 'none',
+                              color: item.completed ? 'var(--text-muted)' : 'var(--text-main)',
+                              whiteSpace: 'nowrap',
+                              textOverflow: 'ellipsis',
+                              overflow: 'hidden'
+                            }}>
+                              {item.title}
+                            </span>
+                          </div>
+
+                          {!isLocked && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteItem(list._id, item._id)}
+                              style={{ background: 'none', color: 'var(--text-dim)', padding: '2px' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add Item Input (ONLY if NOT locked) */}
+                  {isLocked ? (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px', background: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
+                      🔒 This list has been logged as an expense and is locked.
+                    </div>
+                  ) : (
+                    <form onSubmit={(e) => handleAddItem(list._id, e)} style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ flex: 1, minHeight: '34px', padding: '4px 10px', fontSize: '0.82rem' }}
+                        placeholder="Add item (e.g. Milk, Water bottles)..."
+                        value={itemInputs[list._id] || ''}
+                        onChange={(e) => setItemInputs({ ...itemInputs, [list._id]: e.target.value })}
+                      />
+                      <button type="submit" className="btn-secondary" style={{ minHeight: '34px', padding: '4px 10px', fontSize: '0.78rem' }}>
+                        <Plus size={13} /> Add
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Action: Convert Entire List to Group/Personal Expense */}
+                  {isLocked ? (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled
+                      style={{ width: '100%', minHeight: '36px', padding: '6px', fontSize: '0.8rem', opacity: 0.75, cursor: 'not-allowed', justifyContent: 'center' }}
+                    >
+                      ✓ Logged as Expense (Locked)
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ width: '100%', minHeight: '36px', padding: '6px', fontSize: '0.8rem', gap: '6px' }}
+                      onClick={() => {
+                        if (onConvertListToExpense) {
+                          onConvertListToExpense(
+                            list.groupId ? 'group' : 'personal',
+                            list.groupId?._id || list.groupId || null,
+                            list.name,
+                            list._id
+                          );
+                        }
+                      }}
+                    >
+                      <Plus size={14} /> Add List as Expense (Pre-fills "{list.name}") <ArrowRight size={14} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
         </div>
         );
       })()}

@@ -207,26 +207,15 @@ const GroupDetail = ({ groupId, onBack, currentUserId, refreshTrigger, onOpenAdd
                   {linkedList && (
                     <div style={{ marginTop: '10px', padding: '10px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                       <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <ShoppingBag size={14} /> Linked Checklist: {linkedList.name || exp.title}
+                        <ShoppingBag size={14} /> Linked Checklist: {linkedList.name || exp.title} (Locked)
                       </div>
                       {linkedList.items && linkedList.items.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {linkedList.items.map(item => (
                             <div key={item._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await api.toggleItemInList(linkedList._id, item._id);
-                                    fetchGroupDetail(true);
-                                  } catch (err) {
-                                    console.warn('Toggle item error:', err.message);
-                                  }
-                                }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
-                              >
+                              <span style={{ display: 'flex', alignItems: 'center', color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)' }}>
                                 {item.completed ? <CheckSquare size={16} /> : <Square size={16} />}
-                              </button>
+                              </span>
                               <span style={{ textDecoration: item.completed ? 'line-through' : 'none', color: item.completed ? 'var(--text-muted)' : 'var(--text-main)' }}>
                                 {item.title}
                               </span>

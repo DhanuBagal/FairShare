@@ -67,6 +67,10 @@ export const addItemToList = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Purchase list not found' });
     }
 
+    if (list.expenseId) {
+      return res.status(400).json({ success: false, error: 'Cannot modify a purchase list that has already been added as an expense.' });
+    }
+
     list.items.push({
       title: title.trim(),
       completed: false
@@ -92,6 +96,10 @@ export const toggleItemInList = async (req, res) => {
     const list = await PurchaseList.findById(req.params.listId);
     if (!list) {
       return res.status(404).json({ success: false, error: 'Purchase list not found' });
+    }
+
+    if (list.expenseId) {
+      return res.status(400).json({ success: false, error: 'Cannot modify items on a purchase list that has already been added as an expense.' });
     }
 
     const item = list.items.id(req.params.itemId);
@@ -124,6 +132,10 @@ export const deleteList = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Purchase list not found' });
     }
 
+    if (list.expenseId) {
+      return res.status(400).json({ success: false, error: 'Cannot delete a purchase list that has already been added as an expense.' });
+    }
+
     await list.deleteOne();
     res.status(200).json({ success: true, message: 'Purchase list deleted' });
   } catch (error) {
@@ -138,6 +150,10 @@ export const deleteItemFromList = async (req, res) => {
     const list = await PurchaseList.findById(req.params.listId);
     if (!list) {
       return res.status(404).json({ success: false, error: 'Purchase list not found' });
+    }
+
+    if (list.expenseId) {
+      return res.status(400).json({ success: false, error: 'Cannot delete items from a purchase list that has already been added as an expense.' });
     }
 
     list.items.pull(req.params.itemId);
