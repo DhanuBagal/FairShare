@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 import authRoutes from './routes/authRoutes.js';
 import personalExpenseRoutes from './routes/personalExpenseRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
+import purchaseRoutes from './routes/purchaseRoutes.js';
 import seedData from './seed.js';
 
 dotenv.config();
@@ -52,6 +53,7 @@ app.use(async (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', personalExpenseRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/purchases', purchaseRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

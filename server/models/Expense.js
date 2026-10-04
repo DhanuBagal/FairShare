@@ -45,6 +45,11 @@ const expenseSchema = new mongoose.Schema({
     ref: 'Group',
     default: null // Optional: null means personal expense
   },
+  purchaseListId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PurchaseList',
+    default: null // Optional: linked purchase shopping list
+  },
   splitType: {
     type: String,
     enum: ['equal', 'exact', 'percentage'],

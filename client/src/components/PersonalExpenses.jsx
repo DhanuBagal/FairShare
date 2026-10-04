@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { ShoppingBag, Trash2, Plus, Tag } from 'lucide-react';
+import { ShoppingBag, Trash2, Plus, Tag, CheckSquare, Square } from 'lucide-react';
 
 const PersonalExpenses = ({ refreshTrigger, onOpenAddModal }) => {
   const [expenses, setExpenses] = useState([]);
@@ -87,35 +87,79 @@ const PersonalExpenses = ({ refreshTrigger, onOpenAddModal }) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {expenses.map(expense => (
-            <div key={expense._id} className="glass-card" style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Tag size={16} color="var(--accent-primary)" />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '2px' }}>{expense.title}</h4>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    <span>🏷️ {expense.category}</span>
-                    <span>📅 {new Date(expense.date).toLocaleDateString()}</span>
+          {expenses.map(expense => {
+            const linkedList = expense.purchaseListId;
+
+            return (
+              <div key={expense._id} className="glass-card" style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Tag size={16} color="var(--accent-primary)" />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '2px' }}>{expense.title}</h4>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        <span>🏷️ {expense.category}</span>
+                        <span>📅 {new Date(expense.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-main)' }}>
+                      ₹{expense.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                    <button
+                      onClick={() => handleDelete(expense._id)}
+                      style={{ background: 'none', color: 'var(--text-dim)', padding: '4px' }}
+                      title="Delete expense"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-main)' }}>
-                  ₹{expense.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-                <button
-                  onClick={() => handleDelete(expense._id)}
-                  style={{ background: 'none', color: 'var(--text-dim)', padding: '4px' }}
-                  title="Delete expense"
-                >
-                  <Trash2 size={15} />
-                </button>
+                {/* View Linked Purchase / Shopping List if Available */}
+                {linkedList && (
+                  <div style={{ marginTop: '10px', padding: '10px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShoppingBag size={14} /> Linked Shopping List: {linkedList.name || expense.title}
+                    </div>
+                    {linkedList.items && linkedList.items.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {linkedList.items.map(item => (
+                          <div key={item._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await api.toggleItemInList(linkedList._id, item._id);
+                                  fetchPersonalData(true);
+                                } catch (err) {
+                                  console.warn('Toggle item error:', err.message);
+                                }
+                              }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
+                            >
+                              {item.completed ? <CheckSquare size={16} /> : <Square size={16} />}
+                            </button>
+                            <span style={{ textDecoration: item.completed ? 'line-through' : 'none', color: item.completed ? 'var(--text-muted)' : 'var(--text-main)' }}>
+                              {item.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        No checklist items found.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

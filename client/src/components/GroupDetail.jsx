@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import DebtVisualizer from './DebtVisualizer';
 import SettleModal from './SettleModal';
-import { ArrowLeft, Plus, CheckCircle2, UserPlus, Receipt } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, UserPlus, Receipt, History, CheckSquare, Square, ShoppingBag } from 'lucide-react';
 
 const GroupDetail = ({ groupId, onBack, currentUserId, refreshTrigger, onOpenAddExpense }) => {
   const [groupData, setGroupData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('expenses'); // 'expenses' | 'settlements'
 
   // Settle modal state
   const [isSettleOpen, setIsSettleOpen] = useState(false);
@@ -41,10 +42,9 @@ const GroupDetail = ({ groupId, onBack, currentUserId, refreshTrigger, onOpenAdd
     }
   }, [groupId]);
 
-  // Listen to refreshTrigger to instantly update expense list & debt calculations after adding an expense
   useEffect(() => {
     if (groupId && refreshTrigger > 0) {
-      fetchGroupDetail(true); // Silent instant re-fetch!
+      fetchGroupDetail(true);
     }
   }, [refreshTrigger]);
 
@@ -156,44 +156,131 @@ const GroupDetail = ({ groupId, onBack, currentUserId, refreshTrigger, onOpenAdd
         onSettleClick={handleSettleClick}
       />
 
-      {/* Group Expenses List */}
-      <div style={{ marginTop: '16px' }}>
-        <h3 style={{ fontSize: '0.98rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Receipt size={16} color="var(--accent-primary)" /> Group Expenses ({expenses.length})
-        </h3>
+      {/* Sub Navigation Segment (Expenses | Settlement Trace) */}
+      <div className="tabs-container" style={{ marginBottom: '14px' }}>
+        <button
+          className={`tab-btn ${activeTab === 'expenses' ? 'active' : ''}`}
+          onClick={() => setActiveTab('expenses')}
+        >
+          <Receipt size={14} /> Group Expenses ({expenses.length})
+        </button>
 
-        {expenses.length === 0 ? (
-          <div className="glass-card" style={{ padding: '18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-            No expenses recorded in this group yet.
-          </div>
-        ) : (
-          expenses.map(exp => {
-            const paidByName = exp.paidBy ? exp.paidBy.name : 'Unknown';
-            const isPaidByMe = currentUserId && exp.paidBy?._id === currentUserId;
+        <button
+          className={`tab-btn ${activeTab === 'settlements' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settlements')}
+        >
+          <History size={14} /> Settlement History ({settlements.length})
+        </button>
+      </div>
 
-            return (
-              <div key={exp._id} className="glass-card" style={{ padding: '12px', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: '600' }}>{exp.title}</h4>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      Paid by <strong style={{ color: isPaidByMe ? 'var(--accent-primary)' : 'var(--text-main)' }}>{isPaidByMe ? 'You' : paidByName}</strong> • {new Date(exp.date).toLocaleDateString()}
+      {/* Tab 1: Group Expenses Feed */}
+      {activeTab === 'expenses' && (
+        <div>
+          {expenses.length === 0 ? (
+            <div className="glass-card" style={{ padding: '18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              No expenses recorded in this group yet.
+            </div>
+          ) : (
+            expenses.map(exp => {
+              const paidByName = exp.paidBy ? exp.paidBy.name : 'Unknown';
+              const isPaidByMe = currentUserId && exp.paidBy?._id === currentUserId;
+              const linkedList = exp.purchaseListId;
+
+              return (
+                <div key={exp._id} className="glass-card" style={{ padding: '12px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '600' }}>{exp.title}</h4>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Paid by <strong style={{ color: isPaidByMe ? 'var(--accent-primary)' : 'var(--text-main)' }}>{isPaidByMe ? 'You' : paidByName}</strong> • {new Date(exp.date).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1rem', fontWeight: '700' }}>
+                        ₹{exp.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1rem', fontWeight: '700' }}>
-                      ₹{exp.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  {/* Anyone in the group can view the purchase list if added as expense in a group */}
+                  {linkedList && (
+                    <div style={{ marginTop: '10px', padding: '10px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <ShoppingBag size={14} /> Linked Checklist: {linkedList.name || exp.title}
+                      </div>
+                      {linkedList.items && linkedList.items.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {linkedList.items.map(item => (
+                            <div key={item._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await api.toggleItemInList(linkedList._id, item._id);
+                                    fetchGroupDetail(true);
+                                  } catch (err) {
+                                    console.warn('Toggle item error:', err.message);
+                                  }
+                                }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: item.completed ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
+                              >
+                                {item.completed ? <CheckSquare size={16} /> : <Square size={16} />}
+                              </button>
+                              <span style={{ textDecoration: item.completed ? 'line-through' : 'none', color: item.completed ? 'var(--text-muted)' : 'var(--text-main)' }}>
+                                {item.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          No checklist items found.
+                        </div>
+                      )}
                     </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Settlement Audit Trace */}
+      {activeTab === 'settlements' && (
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
+            Complete audit trace of settlements and repayments in this group:
+          </div>
+
+          {settlements.length === 0 ? (
+            <div className="glass-card" style={{ padding: '18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              No settlements logged yet.
+            </div>
+          ) : (
+            settlements.map(s => (
+              <div key={s._id} className="glass-card" style={{ padding: '12px', marginBottom: '8px', borderLeft: '3px solid var(--accent-emerald)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: '700' }}>
+                      <span style={{ color: 'var(--accent-rose)' }}>{s.payer?.name || 'User'}</span> paid <span style={{ color: 'var(--accent-emerald)' }}>{s.payee?.name || 'User'}</span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      📅 {new Date(s.date).toLocaleString('en-IN')} {s.notes && `• Memo: "${s.notes}"`}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--accent-emerald)' }}>
+                    ₹{s.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
-            );
-          })
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
-      {/* Clean Settle Modal listing user's pending payments */}
+      {/* Settle Modal */}
       <SettleModal
         isOpen={isSettleOpen}
         onClose={() => setIsSettleOpen(false)}

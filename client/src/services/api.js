@@ -2,9 +2,8 @@
  * API Client with automatic 401 Unauthorized interceptor and cookie support.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = '/api';
 
-// Helper to get stored auth token if cookies aren't set
 const getStoredToken = () => {
   return localStorage.getItem('fairshare_token');
 };
@@ -32,7 +31,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
   const config = {
     ...options,
     headers,
-    credentials: 'include' // Send HttpOnly cookies automatically
+    credentials: 'include'
   };
 
   if (options.body && typeof options.body === 'object') {
@@ -46,10 +45,9 @@ export const fetchAPI = async (endpoint, options = {}) => {
     try {
       data = await response.json();
     } catch (parseErr) {
-      // Ignore JSON parse errors for non-JSON responses (e.g., HTML 500 error pages)
+      // Ignore non-JSON responses
     }
 
-    // Handle 401 Unauthorized errors
     if (response.status === 401) {
       setStoredToken(null);
       window.dispatchEvent(new CustomEvent('unauthorized'));
@@ -57,7 +55,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
     }
 
     if (!response.ok) {
-      const errorMsg = data?.error || data?.message || `Server error (${response.status}). Please check database connection.`;
+      const errorMsg = data?.error || data?.message || `Server error (${response.status}).`;
       throw new Error(errorMsg);
     }
 
@@ -67,7 +65,6 @@ export const fetchAPI = async (endpoint, options = {}) => {
   }
 };
 
-// API Methods
 export const api = {
   // Auth
   register: (userData) => fetchAPI('/auth/register', { method: 'POST', body: userData }),
@@ -92,6 +89,14 @@ export const api = {
   // Settlement
   createSettlement: (groupId, settlementData) => fetchAPI(`/groups/${groupId}/settle`, { method: 'POST', body: settlementData }),
   getGroupSettlements: (groupId) => fetchAPI(`/groups/${groupId}/settle`),
+
+  // Named Purchase Lists (Checklist API)
+  getUserLists: () => fetchAPI('/purchases'),
+  createList: (listData) => fetchAPI('/purchases', { method: 'POST', body: listData }),
+  deleteList: (listId) => fetchAPI(`/purchases/${listId}`, { method: 'DELETE' }),
+  addItemToList: (listId, title) => fetchAPI(`/purchases/${listId}/items`, { method: 'POST', body: { title } }),
+  toggleItemInList: (listId, itemId) => fetchAPI(`/purchases/${listId}/items/${itemId}/toggle`, { method: 'PATCH' }),
+  deleteItemFromList: (listId, itemId) => fetchAPI(`/purchases/${listId}/items/${itemId}`, { method: 'DELETE' }),
 
   // Demo seed helper
   seedDemoData: () => fetchAPI('/seed', { method: 'POST' })

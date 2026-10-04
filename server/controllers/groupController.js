@@ -2,6 +2,7 @@ import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
 import Settlement from '../models/Settlement.js';
 import User from '../models/User.js';
+import PurchaseList from '../models/PurchaseList.js';
 import { calculateGroupBalances } from '../utils/debtSimplifier.js';
 import { calculateSplit } from '../utils/moneyHelper.js';
 
@@ -84,6 +85,10 @@ export const getGroupById = async (req, res) => {
     const expenses = await Expense.find({ groupId: group._id })
       .populate('paidBy', 'name email avatar')
       .populate('participants.user', 'name email avatar')
+      .populate({
+        path: 'purchaseListId',
+        populate: { path: 'items.completedBy', select: 'name email' }
+      })
       .sort({ date: -1 });
 
     const settlements = await Settlement.find({ groupId: group._id })
@@ -157,7 +162,7 @@ export const addGroupMember = async (req, res) => {
 // @route   POST /api/groups/:id/expenses
 export const addGroupExpense = async (req, res) => {
   try {
-    const { title, totalAmount, category, paidBy, splitType, participantsInput, date, notes } = req.body;
+    const { title, totalAmount, category, paidBy, splitType, participantsInput, date, notes, purchaseListId } = req.body;
 
     const group = await Group.findById(req.params.id);
     if (!group) {
@@ -191,15 +196,27 @@ export const addGroupExpense = async (req, res) => {
       category: category || 'General',
       paidBy: actualPaidBy,
       groupId: group._id,
+      purchaseListId: purchaseListId || null,
       splitType: type,
       participants: formattedParticipants,
       date: date || Date.now(),
       notes: notes || ''
     });
 
+    if (purchaseListId) {
+      await PurchaseList.findByIdAndUpdate(purchaseListId, {
+        expenseId: expense._id,
+        groupId: group._id
+      });
+    }
+
     const populatedExpense = await Expense.findById(expense._id)
       .populate('paidBy', 'name email avatar')
-      .populate('participants.user', 'name email avatar');
+      .populate('participants.user', 'name email avatar')
+      .populate({
+        path: 'purchaseListId',
+        populate: { path: 'items.completedBy', select: 'name email' }
+      });
 
     res.status(201).json({ success: true, expense: populatedExpense });
   } catch (error) {

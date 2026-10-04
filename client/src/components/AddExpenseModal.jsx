@@ -9,6 +9,8 @@ const AddExpenseModal = ({
   defaultGroupId = '',
   lockedScope = null, // 'personal' | 'group' | null
   currentUserId = '',
+  prefilledTitle = '',
+  purchaseListId = '',
   onExpenseAdded
 }) => {
   const isPersonalLocked = lockedScope === 'personal';
@@ -16,7 +18,7 @@ const AddExpenseModal = ({
 
   const [expenseType, setExpenseType] = useState(isPersonalLocked ? 'personal' : 'group');
   const [selectedGroupId, setSelectedGroupId] = useState(defaultGroupId || '');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(prefilledTitle || '');
   const [totalAmount, setTotalAmount] = useState('');
   const [paidBy, setPaidBy] = useState(currentUserId || '');
   const [category, setCategory] = useState('General');
@@ -27,6 +29,12 @@ const AddExpenseModal = ({
 
   const [selectedGroupObj, setSelectedGroupObj] = useState(null);
   const [participantSplits, setParticipantSplits] = useState({});
+
+  useEffect(() => {
+    if (isOpen && prefilledTitle) {
+      setTitle(prefilledTitle);
+    }
+  }, [isOpen, prefilledTitle]);
 
   useEffect(() => {
     if (isPersonalLocked) {
@@ -89,7 +97,8 @@ const AddExpenseModal = ({
           title,
           totalAmount: numAmount,
           category,
-          notes
+          notes,
+          purchaseListId: purchaseListId || null
         });
       } else {
         const targetGroupId = selectedGroupId || defaultGroupId;
@@ -121,7 +130,8 @@ const AddExpenseModal = ({
           paidBy: paidBy || currentUserId, // Send selected paidBy user ID
           splitType,
           participantsInput,
-          notes
+          notes,
+          purchaseListId: purchaseListId || null
         });
       }
 

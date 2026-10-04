@@ -4,13 +4,14 @@ import PersonalExpenses from './PersonalExpenses';
 import GroupList from './GroupList';
 import GroupDetail from './GroupDetail';
 import AddExpenseModal from './AddExpenseModal';
+import PurchaseList from './PurchaseList';
 import MobileBottomNav from './MobileBottomNav';
 import { api } from '../services/api';
-import { Users, User } from 'lucide-react';
+import { Users, User, ShoppingCart } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('groups'); // 'personal' | 'groups'
+  const [activeTab, setActiveTab] = useState('groups'); // 'groups' | 'personal' | 'purchases'
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [groups, setGroups] = useState([]);
 
@@ -19,8 +20,10 @@ const Dashboard = () => {
 
   // Add Expense modal state
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const [addExpenseLockedScope, setAddExpenseLockedScope] = useState(null); // 'personal' | 'group' | null
+  const [addExpenseLockedScope, setAddExpenseLockedScope] = useState(null);
   const [addExpenseDefaultGroupId, setAddExpenseDefaultGroupId] = useState('');
+  const [addExpensePrefilledTitle, setAddExpensePrefilledTitle] = useState('');
+  const [addExpensePurchaseListId, setAddExpensePurchaseListId] = useState('');
 
   const fetchUserGroups = async () => {
     try {
@@ -39,7 +42,7 @@ const Dashboard = () => {
     }
   }, [user, refreshTrigger]);
 
-  const handleOpenAddExpense = (scope = null, groupId = null) => {
+  const handleOpenAddExpense = (scope = null, groupId = null, prefilledTitle = '', purchaseListId = '') => {
     if (selectedGroupId && !groupId) {
       groupId = selectedGroupId;
       scope = 'group';
@@ -49,13 +52,14 @@ const Dashboard = () => {
 
     setAddExpenseLockedScope(scope);
     setAddExpenseDefaultGroupId(groupId || '');
+    setAddExpensePrefilledTitle(prefilledTitle || '');
+    setAddExpensePurchaseListId(purchaseListId || '');
     setIsAddExpenseOpen(true);
   };
 
-  // Called whenever any expense (Personal or Group) is added
   const handleExpenseAdded = () => {
     fetchUserGroups();
-    setRefreshTrigger(prev => prev + 1); // Trigger immediate refresh across active views!
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -67,14 +71,21 @@ const Dashboard = () => {
             className={`tab-btn ${activeTab === 'groups' ? 'active' : ''}`}
             onClick={() => setActiveTab('groups')}
           >
-            <Users size={15} /> Shared Groups
+            <Users size={14} /> Shared Groups
           </button>
 
           <button
             className={`tab-btn ${activeTab === 'personal' ? 'active' : ''}`}
             onClick={() => setActiveTab('personal')}
           >
-            <User size={15} /> Solo Expenses
+            <User size={14} /> Solo Expenses
+          </button>
+
+          <button
+            className={`tab-btn ${activeTab === 'purchases' ? 'active' : ''}`}
+            onClick={() => setActiveTab('purchases')}
+          >
+            <ShoppingCart size={14} /> Shopping List
           </button>
         </div>
       )}
@@ -93,10 +104,18 @@ const Dashboard = () => {
           onSelectGroup={(id) => setSelectedGroupId(id)}
           onOpenAddExpense={(scope, gid) => handleOpenAddExpense(scope, gid)}
         />
-      ) : (
+      ) : activeTab === 'personal' ? (
         <PersonalExpenses
           refreshTrigger={refreshTrigger}
           onOpenAddModal={(scope, gid) => handleOpenAddExpense(scope, gid)}
+        />
+      ) : (
+        /* Standalone Top-Level Purchase / Shopping List */
+        <PurchaseList
+          groups={groups}
+          onConvertListToExpense={(scope, gid, title, listId) => {
+            handleOpenAddExpense(scope, gid, title, listId);
+          }}
         />
       )}
 
@@ -107,6 +126,8 @@ const Dashboard = () => {
         groups={groups}
         defaultGroupId={addExpenseDefaultGroupId}
         lockedScope={addExpenseLockedScope}
+        prefilledTitle={addExpensePrefilledTitle}
+        purchaseListId={addExpensePurchaseListId}
         currentUserId={user?._id}
         onExpenseAdded={handleExpenseAdded}
       />

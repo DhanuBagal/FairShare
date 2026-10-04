@@ -1,4 +1,5 @@
 import Expense from '../models/Expense.js';
+import PurchaseList from '../models/PurchaseList.js';
 import { calculateSplit } from '../utils/moneyHelper.js';
 
 // @desc    Get all personal expenses of authenticated user
@@ -8,7 +9,12 @@ export const getPersonalExpenses = async (req, res) => {
     const expenses = await Expense.find({
       paidBy: req.user.id,
       groupId: null
-    }).sort({ date: -1 });
+    })
+      .populate({
+        path: 'purchaseListId',
+        populate: { path: 'items.completedBy', select: 'name email' }
+      })
+      .sort({ date: -1 });
 
     const totalPersonalSpent = expenses.reduce((acc, curr) => acc + curr.totalAmount, 0);
 
@@ -27,7 +33,7 @@ export const getPersonalExpenses = async (req, res) => {
 // @route   POST /api/expenses/personal
 export const createPersonalExpense = async (req, res) => {
   try {
-    const { title, totalAmount, category, date, notes } = req.body;
+    const { title, totalAmount, category, date, notes, purchaseListId } = req.body;
 
     if (!title || !totalAmount) {
       return res.status(400).json({ success: false, error: 'Title and total amount are required' });
@@ -46,11 +52,18 @@ export const createPersonalExpense = async (req, res) => {
       category: category || 'General',
       paidBy: req.user.id,
       groupId: null,
+      purchaseListId: purchaseListId || null,
       splitType: 'equal',
       participants,
       date: date || Date.now(),
       notes: notes || ''
     });
+
+    if (purchaseListId) {
+      await PurchaseList.findByIdAndUpdate(purchaseListId, {
+        expenseId: expense._id
+      });
+    }
 
     res.status(201).json({ success: true, expense });
   } catch (error) {
