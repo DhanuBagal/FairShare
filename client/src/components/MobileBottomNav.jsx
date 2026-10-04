@@ -1,39 +1,44 @@
 import React from 'react';
-import { Users, User, PlusCircle, ShoppingCart } from 'lucide-react';
+import { Users, User, ShoppingCart, Plus } from 'lucide-react';
 
 const MobileBottomNav = ({ activeTab, onTabChange, onOpenAddExpense }) => {
   return (
     <div className="mobile-bottom-nav">
       <button
+        type="button"
         className={`mobile-nav-item ${activeTab === 'groups' ? 'active' : ''}`}
         onClick={() => onTabChange('groups')}
       >
-        <Users size={18} />
+        <Users size={19} />
         <span>Groups</span>
       </button>
 
       <button
+        type="button"
         className={`mobile-nav-item ${activeTab === 'personal' ? 'active' : ''}`}
         onClick={() => onTabChange('personal')}
       >
-        <User size={18} />
+        <User size={19} />
         <span>Solo</span>
       </button>
 
       <button
-        className="mobile-nav-fab"
-        onClick={() => onOpenAddExpense(null)}
-        title="Add Expense"
-      >
-        <PlusCircle size={24} color="#FFF" />
-      </button>
-
-      <button
+        type="button"
         className={`mobile-nav-item ${activeTab === 'purchases' ? 'active' : ''}`}
         onClick={() => onTabChange('purchases')}
       >
-        <ShoppingCart size={18} />
+        <ShoppingCart size={19} />
         <span>Shopping</span>
+      </button>
+
+      <button
+        type="button"
+        className="mobile-nav-add-btn"
+        onClick={() => onOpenAddExpense(null)}
+        title="Add Expense"
+      >
+        <Plus size={16} />
+        <span>Add</span>
       </button>
     </div>
   );
